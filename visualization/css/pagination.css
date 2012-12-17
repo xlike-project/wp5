@@ -1,4 +1,9 @@
 @charset "utf-8";      
+
+.pagination {
+	text-align: center;
+}
+
 .pagination a {
     text-decoration: none;
 //	border: 1px solid #AAE;

@@ -25,7 +25,7 @@
           data = words.map(function(d, i) {
         return {
           text: text.call(this, d, i),
-		  uri: uri.call(this, d, i),//added by alex
+//		  uri: uri.call(this, d, i),//added by alex
           font: font.call(this, d, i),
           rotate: rotate.call(this, d, i),
           size: ~~fontSize.call(this, d, i),

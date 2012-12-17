@@ -8,15 +8,22 @@
 	var online = true,			// false means using local data in a file for 
 								// development, true for using news feeds online
 		doChart = true,
+		debug = true,
+		sta = false,
 		searchUrl = "http://newsfeed.ijs.si/xlike/search?q=",
+		searchUrlSTA = "http://newsfeed.ijs.si/xlike-sta/search?q=",
 		entityQueryUrl = "http://newsfeed.ijs.si/xlike/entity?uri=",
+		entityQueryUrlSTA = "http://newsfeed.ijs.si/xlike-sta/entity?uri=",
 		storyQueryUrl = "http://newsfeed.ijs.si/xlike/story?id=",
+		storyQueryUrlSTA = "http://newsfeed.ijs.si/xlike-sta/story?id=",
 		
 		history = [],
 		MAX_HIS = 8,
 		Common = {};
 	Common.online = function() { return online; };
 	Common.doChart = function() { return doChart; };
+	Common.debug = function() { return debug; };
+	Common.sta = function() { return sta; };
 	/**
 	 * Find single article object from a article list by article id. Return null
 	 * if not found.
@@ -71,16 +78,50 @@
 		return entityList;
 	};
 	
-	Common.getSearchURL = function(queryStr) {
-		return searchUrl + encodeURIComponent(queryStr) + "&page=0&callback=?";
+	Common.getSearchURL = function(queryStr, opt) {
+	
+		var url = "";
+		if(Common.sta())
+			url = searchUrlSTA;
+		else url = searchUrl;
+		url += encodeURIComponent(queryStr) + "&page=0";
+		if(opt) {
+			url += "&" + getParaStr(opt);
+		}
+		url += "&callback=?";
+		if(Common.debug())
+			console.log(url);
+		return url;
 	};
 	
-	Common.getEntityQueryURL = function(id) {
-		return entityQueryUrl + encodeURIComponent(id) + "&callback=?";
+	Common.getEntityQueryURL = function(id, opt) {
+		var url = "";
+		if(Common.sta())
+			url = entityQueryUrlSTA;
+		else url = entityQueryUrl;
+		url += encodeURIComponent(id);
+		if(opt) {
+			url += "&" + getParaStr(opt);
+		}
+		url += "&callback=?";
+		if(Common.debug())
+			console.log(url);
+		return url;
 	};
 	
-	Common.getStoryQueryURL = function(id) {
-		return storyQueryUrl + encodeURIComponent(id) + "&callback=?";
+	Common.getStoryQueryURL = function(id, opt) {
+		var url = "";
+		if(Common.sta())
+			url = storyQueryUrlSTA;
+		else url = storyQueryUrl;
+		url += encodeURIComponent(id);
+		if(opt) {
+			url += "&" + getParaStr(opt);
+		}
+		url += "&callback=?";
+		if(Common.debug())
+			console.log(url);
+		return url;
 	};
 	
 	Common.showLoading = function() {
@@ -189,6 +230,28 @@
 		//alert($("#navi > span:gt(" + i + ")").length);
 		$("#navi > span:gt(" + i + ")").remove();
 	};
+	
+	/* Utility function for tab switch */
+	Common.switchTab = function(id, tab) {
+		if($(tab).hasClass("here"))
+			return;
+		$(tab).addClass("here");
+		$(tab).parent().siblings().children("a").removeClass();
+		if(id == "story") {
+			$("#story").css("display", "block");
+			$("#article").css("display", "none");
+		} else if(id == "article"){
+			$("#story").css("display", "none");
+			$("#article").css("display", "block");
+		} else if(id == "hot"){
+			$("#sta").css("display", "none");
+			$("#hot").css("display", "block");
+		} else if(id == "sta"){
+			$("#hot").css("display", "none");
+			$("#sta").css("display", "block");
+		}
+			
+	}
 	
 	namespace.Common = Common;
 	

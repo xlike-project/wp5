@@ -12,16 +12,16 @@ Module.import(org.xlike.thu);
 
 	// Set chart options
 	var colOptions = {width:268,
-			   height:170,
+			   height:140,
 	           legend:{ position:'none' },
 			   vAxis:{ minValue: 0 },
 			   curveType:'function',
 			   pointSize:3,
-	           chartArea:{left:30,top:8,width:'90%',height:'80%'}
+	           chartArea:{left:50,top:8,width:'90%',height:'60%'}
 			  },
 		pieOptions = {width:268,
-			   height:170,
-	           chartArea:{left:60,top:30,width:'90%',height:'90%'}
+			   height:150,
+	           chartArea:{left:50,top:10,width:'90%',height:'80%'}
 			  },
 		articles = [];
 		Chart = {};
@@ -35,6 +35,24 @@ Module.import(org.xlike.thu);
 			drawLanguageChart(articleList);
 			drawTimeChart(articleList);
 			//drawNewsChart();
+		} catch (e) {
+			Common.hideLoading();
+		}
+	};
+	
+	Chart.updateByQuery = function (data) {
+		try {
+			var articles = data.articles;
+			if(data.related) {
+				for(var i in data.related) {
+					articles = articles.concat(data.related[i].articles);
+				}
+			}
+			if(data.sources)
+				drawSourceChart(data.sources);
+			else drawAgencyChart(articles);
+			drawLanguageChart(articles);
+			drawTimeChart(articles);
 		} catch (e) {
 			Common.hideLoading();
 		}
@@ -85,6 +103,39 @@ Module.import(org.xlike.thu);
 			div.removeChild(div.firstChild);
 		//add chart element
 		var chart = new google.visualization.ColumnChart(div);
+		chart.draw(data, colOptions);
+	}
+	
+	function drawSourceChart(sources) {
+		// Create the data table.
+		var header = [["Publisher", "Articles"]];
+		var pubMap = [];
+		var other = 0;
+		for(var i in sources) {
+			if(i < 10) {
+				var newPub = [];
+				newPub[0] = sources[i].source;
+				newPub[1] = sources[i].count;
+				pubMap.push(newPub);
+			} else {
+				other += sources[i].count;
+			}
+		}
+		var newPub = [];
+		newPub[0] = 'Others';
+		newPub[1] = other;
+		//pubMap.push(newPub);
+		
+		var data = google.visualization.arrayToDataTable(header.concat(pubMap));
+
+		// Instantiate and draw our chart, passing in some options.
+		var div = document.getElementById('agency_chart');
+		//clear all children elements
+		while(div.hasChildNodes())
+			div.removeChild(div.firstChild);
+		//add chart element
+		var chart = new google.visualization.ColumnChart(div);
+		//var chart = new google.visualization.AreaChart(div);
 		chart.draw(data, colOptions);
 	}
 
@@ -140,12 +191,13 @@ Module.import(org.xlike.thu);
 
 	function sortArticlesByDate(articleList) {
 		var datMap = [];
-		for(i in articleList) {
+		for(var i in articleList) {
 			var article = articleList[i];
 			if(article == null)
 				continue;
 			var j = 0;
-			var time = getShortDate(article.date);
+			//var time = getShortDate(article.date);
+			var time = article.date;
 			for(; j < datMap.length; j ++) {
 				if(datMap[j][0] == time) {
 					datMap[j][1] += 1;
@@ -162,14 +214,44 @@ Module.import(org.xlike.thu);
 		datMap = datMap.sort(function (a, b) {
 			return a[0] > b[0] ? 1 : -1;
 		});
+		
+		var last = "-1";
+		var labels = [];
+		var j = 0;
+		if(datMap.length > 10)
+		for(var i in datMap) {
+			var time = datMap[i][0];
+			if((time.substring(0, 10) != last) || (i == datMap.lenght - 1)) {
+				//datMap[i][0] = getShortDate(time);
+				datMap[i][0] = time;
+			} else datMap[i][0] = getShortDate(time);
+			last = time.substring(0, 10);
+		}
+		/*
+		//3次二分
+		for(var i = 0; i < 3; i ++) {
+			var inteval = Math.floor(datMap.length / Math.pow(2, (i + 1)));
+			var index = inteval;
+			while(index < datMap.length) {
+				if(labels[index] == null)
+					labels[index] = getShortDate(datMap[index][0]);
+				index += inteval;
+			}
+		}
+		for(var i in datMap) {
+			if(labels[i])
+				datMap[i][0] = labels[i];
+			else datMap[i][0] = "";
+		}
 		//if(datMap.length > 5)
 		//	return datMap.slice(0, 5);
+		*/
 		return datMap;
 	}
 
 	function drawTimeChart(articleList) {
 		// Create the data table.
-		var header = [["Date", "Number"]];
+		var header = [["Date", "Articles"]];
 		var datMap = sortArticlesByDate(articleList);
 		var data = google.visualization.arrayToDataTable(header.concat(datMap));
 
@@ -178,15 +260,16 @@ Module.import(org.xlike.thu);
 		var div = document.getElementById('time_chart');
 		while(div.hasChildNodes())
 			div.removeChild(div.firstChild);
-		var chart = new google.visualization.LineChart(div);
+		//var chart = new google.visualization.LineChart(div);
+		var chart = new google.visualization.AreaChart(div);
 		var timeOptions = {width:900,
 				   height:80,
 				   legend:{ position:'none' },
 				   vAxis:{ minValue: 0 },
 				   curveType:'function',
-				   pointSize:2,
+				   //pointSize:2,
 				   fontSize:9,
-				   chartArea:{left:30,top:8,width:'94%',height:'70%'}
+				   chartArea:{left:30,top:8,width:'94%',height:'50%'}
 				  };
 		chart.draw(data, timeOptions);
 	}

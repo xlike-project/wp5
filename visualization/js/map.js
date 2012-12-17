@@ -63,12 +63,12 @@
 		return locMap;
 	}
 
-	function createMarker(latlng, title, articles, total) {
-		var unit = Math.floor(total / 3);
-		var scale = Math.floor(articles.length / unit) + 1;
-		var iconFile = "images/" + icons[scale - 1];
+	function createMarker(latlng, title, articles, scale) {
+		//var unit = Math.floor(total / 3);
+		//var scale = Math.floor(articles.length / unit) + 1;
+		var iconFile = "images/" + icons[scale];
 		var icon = new google.maps.MarkerImage(iconFile);
-		var size = 16 * scale;
+		var size = 16 * (scale + 1);
 		icon.scaledSize = new google.maps.Size(size, size);
 		icon.anchor = new google.maps.Point(size / 2, size / 2);
 		var marker = new google.maps.Marker({
@@ -84,6 +84,7 @@
 		});
 		google.maps.event.addListener(marker,"click", function() {
 			//var myHtml = "<b>#" + number + "</b><br/>" + message[number -1];
+			settingsHide();
 			infowindow.open(Map.map, marker);
 			visibleInfoWin.push(infowindow);
 		});
@@ -100,8 +101,14 @@
 		
 		//add new markers to map
 		// commented because of google map api loading failure
+		var getCount = function (d) {
+			return d.articles.length;
+		};
+		var sizeScale = d3.scale.linear()
+			.domain([d3.min(locMap, getCount), d3.max(locMap, getCount)])
+			.rangeRound([0, 1, 2]);
 		for (var i = 0; i < locMap.length; i++) {
-			
+			/*
 			(function(i) {
 				if(Map.geocoder)
 					Map.geocoder.geocode({ 'address': locMap[i].loc }, function (results, status) {
@@ -115,12 +122,13 @@
 						}
 					});
 			})(i);
-			/*
+			*/
 			var marker = createMarker(
-				locMap[i].location, 
+				new google.maps.LatLng(locMap[i].location[0], locMap[i].location[1]),
 				locMap[i].loc, 
-				locMap[i].articles);
-			currentMarkers.push(marker);*/
+				locMap[i].articles,
+				sizeScale(locMap[i].articles.length));
+			currentMarkers.push(marker);
 		}
 	}
 	namespace.Map = Map;
@@ -140,6 +148,8 @@ function initialize() {
 	google.maps.event.addListener(Map.map,"click", function() {
 		org.xlike.thu.Map.closeAllInfoWin();
 	});
+	
+	loadDefault();
 }
 
 function loadScript() {
