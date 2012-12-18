@@ -96,7 +96,7 @@ function getParaStr(opt){
 	var paraStr = "";
 	if(opt) {
 		if(opt.pageSize)
-			paraStr += "pageSize=" + opt.pageSize;
+			paraStr += "pagesize=" + opt.pageSize;
 		if(opt.ts)
 			paraStr += "&ts=" + opt.ts;
 			
@@ -120,7 +120,7 @@ function getParaStr(opt){
 		var pageSize = $("#rblPageSize > option:selected").val(); 
 		var timeSpan = $("#rblTimeDuration > option:selected").val(); 
 		
-		paraStr = "pageSize="+pageSize;
+		paraStr = "pagesize="+pageSize;
 		paraStr += "&ts="+timeSpan;
 		
 		//language
