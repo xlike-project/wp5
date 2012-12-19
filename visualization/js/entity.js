@@ -28,6 +28,7 @@
 					.append("a")
 					.attr("href", "javascript:void(0);")//function (d) { return d.url; })
 					.text(function (d) { return "> " + d.label + ' (' + d.count + ')'; })
+					.attr("onclick", function(d) { return "javascript:Entity.select('" + d.uri + "');";})
 					.on("click", function(d) {
 						selectEntity(d);
 					});
@@ -70,7 +71,9 @@
 			});
 			
 		}();
-	 
+	 	
+	 	entities = entities.concat(customeList);
+	 	
 		function cusPageSelectCallback(page_index, jq){
 			//var items_per_page = 3;
 			var num_entries = $("#custome li").length;
