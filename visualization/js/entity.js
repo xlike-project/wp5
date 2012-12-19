@@ -29,9 +29,9 @@
 					.attr("href", "javascript:void(0);")//function (d) { return d.url; })
 					.text(function (d) { return "> " + d.label + ' (' + d.count + ')'; })
 					.attr("onclick", function(d) { return "javascript:Entity.select('" + d.uri + "');";})
-					.on("click", function(d) {
-						selectEntity(d);
-					});
+					// .on("click", function(d) {
+						// selectEntity(d);
+					// });
 				var num_entries = $("#custome li").length;
 				// 创建分页
 				$("#cus-pager").pagination(num_entries, {
@@ -72,7 +72,6 @@
 			
 		}();
 	 	
-	 	entities = entities.concat(customeList);
 	 	
 		function cusPageSelectCallback(page_index, jq){
 			//var items_per_page = 3;
@@ -151,6 +150,10 @@
 		for(var i in entities) {
 			if(entities[i].uri == uri)
 				return entities[i];
+		}
+		for(var i in customes) {
+			if(customes[i].uri == uri)
+				return customes[i];
 		}
 	}
 	
