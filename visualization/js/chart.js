@@ -3,6 +3,8 @@
  */
 Module.import(org.xlike.thu);
 (function(namespace) {
+	var timelineData = []
+		timelineHeader = [['Date']];
 	// Load the Visualization API and the piechart package.
 	if(typeof google == "undefined")
 		alert("Oops, fail to load google library...");
@@ -28,19 +30,19 @@ Module.import(org.xlike.thu);
 	// Callback that creates and populates a data table,
 	// instantiates the pie chart, passes in the data and
 	// draws it.
-	Chart.update = function(articleList) {
+	Chart.update = function(label, articleList) {
 		try{
-			articles = articleList;
+			//articles = articleList;
 			drawAgencyChart(articleList);
 			drawLanguageChart(articleList);
-			drawTimeChart(articleList);
+			drawTimeChart(label, articleList);
 			//drawNewsChart();
 		} catch (e) {
 			Common.hideLoading();
 		}
 	};
 	
-	Chart.updateByQuery = function (data) {
+	Chart.updateByQuery = function (data, label) {
 		try {
 			var articles = data.articles;
 			if(data.related) {
@@ -52,7 +54,7 @@ Module.import(org.xlike.thu);
 				drawSourceChart(data.sources);
 			else drawAgencyChart(articles);
 			drawLanguageChart(articles);
-			drawTimeChart(articles);
+			drawTimeChart(label, articles);
 		} catch (e) {
 			Common.hideLoading();
 		}
@@ -87,7 +89,7 @@ Module.import(org.xlike.thu);
 		});
 		//if(pubMap.length > 5)
 		//	return pubMap.slice(0, 5);
-		return pubMap;
+		return pubMap.slice(0, 10);
 	}
 
 	function drawAgencyChart(articleList) {
@@ -214,60 +216,175 @@ Module.import(org.xlike.thu);
 		datMap = datMap.sort(function (a, b) {
 			return a[0] > b[0] ? 1 : -1;
 		});
-		
-		var last = "-1";
-		var labels = [];
-		var j = 0;
-		if(datMap.length > 10)
-		for(var i in datMap) {
-			var time = datMap[i][0];
-			if((time.substring(0, 10) != last) || (i == datMap.lenght - 1)) {
-				//datMap[i][0] = getShortDate(time);
-				datMap[i][0] = time;
-			} else datMap[i][0] = getShortDate(time);
-			last = time.substring(0, 10);
-		}
-		/*
-		//3次二分
-		for(var i = 0; i < 3; i ++) {
-			var inteval = Math.floor(datMap.length / Math.pow(2, (i + 1)));
-			var index = inteval;
-			while(index < datMap.length) {
-				if(labels[index] == null)
-					labels[index] = getShortDate(datMap[index][0]);
-				index += inteval;
-			}
-		}
-		for(var i in datMap) {
-			if(labels[i])
-				datMap[i][0] = labels[i];
-			else datMap[i][0] = "";
-		}
-		//if(datMap.length > 5)
-		//	return datMap.slice(0, 5);
-		*/
 		return datMap;
 	}
+	
+	function shortenDateStr(datMap) {
+		var ret = [];
+		var last = "-1";
+		for(var i in datMap) {
+			ret[i] = [];
+			var time = datMap[i][0];
+			if((time.substring(0, 10) != last) || (i == datMap.lenght - 1)) {
+				//ret[i][0] = getShortDate(time);
+				ret[i][0] = time;
+			} else ret[i][0] = getShortDate(time);
+			for(var j = 1; j < datMap[i].length; j ++) {
+				ret[i][j] = datMap[i][j];
+			}
+			last = time.substring(0, 10);
+		}
+		return ret;
+	}
 
-	function drawTimeChart(articleList) {
+	function merge(origin, data) {
+		var articles = data.articles;
+		if(data.related) {
+			for(var i in data.related) {
+				articles = articles.concat(data.related[i].articles);
+			}
+		}
+		var datMap = sortArticlesByDate(articles);
+		var i = 0, 			// index for origin
+			j = 0,			// index for datMap
+			l = 0,			// index for result array
+			ret = [];		// result date-value array
+		while(i < origin.length && j < datMap.length) {
+			if(origin[i][0] == datMap[j][0]) {		// date strings equal
+				ret[l] = [].concat(origin[i]);
+				ret[l].push(datMap[j][1]);
+				i ++;
+				j ++;
+			} else if(origin[i][0] < datMap[j][0]) {		//date strings not equal, the origin less
+				ret[l] = [].concat(origin[i]);
+				ret[l].push(0);
+				i ++;
+			} else if(origin[i][0] > datMap[j][0]) {		//date strings not equal, the datMap greater
+				ret[l] = [datMap[j][0]];
+				for(var m = 0; m < origin[0].length - 1; m ++) {
+					ret[l].push(0);
+				}
+				ret[l].push(datMap[j][1]);
+				j ++;
+			}
+			l ++;
+		}
+		if(i == origin.length) {	// origin complete first
+			for(;j < datMap.length; j ++) {
+				ret[l] = [datMap[j][0]];
+				if(origin.length > 0) {
+					for(var m = 0; m < origin[0].length - 1; m ++) {
+						ret[l].push(0);
+					}
+				}
+				ret[l].push(datMap[j][1]);
+				l ++;
+			}
+		}
+		if(j == datMap.length) {	// datMap complete first
+			for(;i < origin.length; i ++) {
+				ret[l] = [].concat(origin[i]);
+				ret[l].push(0);
+				l ++;
+			}
+		}
+		return ret;
+	}
+	
+	Chart.addTimeline= function(data) {
+		var ret = merge(timelineData, data);
+		/*if(Common.debug()) {
+			for(var i = 0; i < ret.length; i ++) {
+				console.log(ret[i]);
+			}
+		}*/
+		var shortRet = shortenDateStr(ret);
+		var header = [timelineHeader[0].concat([data.label])];
+		var dataArray = header.concat(shortRet);
+		/*if(Common.debug()) {
+			for(var i = 0; i < dataArray.length; i ++) {
+				console.log(dataArray[i]);
+			}
+		}*/
+		var data = google.visualization.arrayToDataTable(dataArray);
+		drawMultiLineTimeChart(data);
+		timelineData = ret;
+		timelineHeader = header;
+	};
+	
+	Chart.removeTimeline = function(label) {
+	// TODO: deal with the special condition:
+	// 'query input' == 'entity label'
+		for(var j = 1; j < timelineHeader[0].length; j ++) {
+			if(timelineHeader[0][j] == label)
+				break;
+		}
+		timelineHeader[0].splice(j, 1);
+		for(var i in timelineData) {
+			timelineData[i].splice(j, 1);
+		}
+		/*
+		if(Common.debug()) {
+			for(var i = 0; i < timelineData.length; i ++) {
+				console.log(timelineData[i]);
+			}
+		}*/
+		if(timelineHeader[0].length < 2) {
+			// if there is no any time line data
+			timelineHeader = [['Date']];
+			timelineData = [];
+		}
+		var shortData = shortenDateStr(timelineData);
+		var dataArray = timelineHeader.concat(shortData);
+		var data = google.visualization.arrayToDataTable(dataArray);
+		drawMultiLineTimeChart(data);
+	};
+	
+	function drawTimeChart(label, articleList) {
 		// Create the data table.
-		var header = [["Date", "Articles"]];
+		var header = [["Date", label]];
 		var datMap = sortArticlesByDate(articleList);
-		var data = google.visualization.arrayToDataTable(header.concat(datMap));
+		var shortDatMap = shortenDateStr(datMap);
+		/*if(Common.debug()) {
+			for(var i = 0; i < shortDatMap.length; i ++) {
+				console.log(shortDatMap[i]);
+			}
+		}*/
+		//var datMap = getDateArray(dates);
+		var dataArray = header.concat(shortDatMap);
+		var data = google.visualization.arrayToDataTable(dataArray);
 
-		// Instantiate and draw our chart, passing in some options.
-		//clear all children elements
+		drawMultiLineTimeChart(data);
+		timelineData = datMap;
+		timelineHeader = header;
+	}
+	
+	function getDateArray(dates) {
+		var datArray = [];
+		for(var i in dates) {
+			var item = [];
+			item[0] = dates[i].interval;
+			item[1] = dates[i].frequency;
+			datArray.push(item);
+		}
+		return datArray;
+	}
+	
+	function drawMultiLineTimeChart(data) {
 		var div = document.getElementById('time_chart');
 		while(div.hasChildNodes())
 			div.removeChild(div.firstChild);
+		if(data.getNumberOfColumns() < 2) {
+			return;
+		}
 		//var chart = new google.visualization.LineChart(div);
 		var chart = new google.visualization.AreaChart(div);
 		var timeOptions = {width:900,
 				   height:80,
-				   legend:{ position:'none' },
+				   legend:{ position:'in' },
 				   vAxis:{ minValue: 0 },
 				   curveType:'function',
-				   //pointSize:2,
+				   //pointSize:1,
 				   fontSize:9,
 				   chartArea:{left:30,top:8,width:'94%',height:'50%'}
 				  };

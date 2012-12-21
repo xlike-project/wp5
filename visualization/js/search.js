@@ -31,7 +31,7 @@ function doSearch(input, isDefault) {
 	Common.showLoading();
 	if(Common.online()) {
 		$.getJSON(url, function(data) {
-				updatePage(data, isDefault);
+				updatePage(data, isDefault, query);
 			})
 			.error(function(){ 
 				Common.hideLoading(); 
@@ -42,19 +42,14 @@ function doSearch(input, isDefault) {
 	}
 }
 
-function updatePage(data, isDefault) {
+function updatePage(data, isDefault, query) {
 	try{
 		Entity.update(data.entities, data.customEntities);
 		Story.update(data.stories);
 		if(!isDefault) {
-			var articles = data.articles;
-			if(data.related) {
-				for(var i in data.related) {
-					articles = articles.concat(data.related[i].articles);
-				}
-			}
+			var articles = Article.mergeRelated(data);
 			if(Common.doChart())
-				Chart.updateByQuery(data);
+				Chart.updateByQuery(data, query);
 			if(Common.online())
 				Map.update(articles);
 			//Cloud.updateByArticles(data.articles);
@@ -71,4 +66,13 @@ function updatePage(data, isDefault) {
 function loadDefault() {
 	//TODO
 	doSearch("", true);
+}
+
+function swapImg(elem, tag) {
+	if(tag == 'on') {
+		//alert($(elem).attr('onmouseover'));
+		$(elem).css('background-image', 'url(images/chart.png)');
+	} else {
+		$(elem).css('background-image', 'url(images/chart-gray.png)');
+	}
 }

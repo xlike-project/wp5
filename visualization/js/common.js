@@ -10,6 +10,7 @@
 		doChart = true,
 		debug = true,
 		sta = false,
+		hotTab = true,			// hot emtity tab is shown
 		searchUrl = "http://newsfeed.ijs.si/xlike/search?q=",
 		searchUrlSTA = "http://newsfeed.ijs.si/xlike-sta/search?q=",
 		entityQueryUrl = "http://newsfeed.ijs.si/xlike/entity?uri=",
@@ -24,6 +25,7 @@
 	Common.doChart = function() { return doChart; };
 	Common.debug = function() { return debug; };
 	Common.sta = function() { return sta; };
+	Common.hotTab = function() { return hotTab; };
 	/**
 	 * Find single article object from a article list by article id. Return null
 	 * if not found.
@@ -246,9 +248,11 @@
 		} else if(id == "hot"){
 			$("#sta").css("display", "none");
 			$("#hot").css("display", "block");
+			hotTab = true;
 		} else if(id == "sta"){
 			$("#hot").css("display", "none");
 			$("#sta").css("display", "block");
+			hotTab = false;
 		}
 			
 	}

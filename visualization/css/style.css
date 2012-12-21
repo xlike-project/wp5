@@ -510,3 +510,13 @@ li
 	display: none;
 	left: 485px;
 }
+
+/* others */
+.icon {
+	width: 16px;
+	height: 16px;
+	margin: 0px 4px 0px 0px;
+	background-image: url(../images/chart-gray.png);
+	border: none;
+	cursor: pointer;
+}

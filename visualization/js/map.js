@@ -19,10 +19,14 @@
 	function getLinkListHtml(articles) {
 		var html = "<ul>";
 		for(i in articles) {
-			var a = "<li><a href='" 
-					+ articles[i].url + "'>" 
-					+ "&gt;&nbsp;" + articles[i].title
-					+ "</a></li>";
+			var a = "<li><a target=_blank ";
+			if(articles[i].related)
+				a += "style='color:gray;' ";
+			a += "href='" 
+				+ articles[i].url + "'>" 
+				+ "&gt;&nbsp;" + articles[i].title
+				+ " (<i>FROM: " + articles[i].source + "</i>)"
+				+ "</a></li>";
 			html += a;
 		}
 		html += "</ul>";

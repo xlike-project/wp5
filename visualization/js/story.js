@@ -27,12 +27,13 @@
 		p.slideUp(300).html(html).slideDown(300);
 		//update entity list, chart, cloud and map.
 		Entity.update(s.entities, s.customEntities);
-		Article.update(s.articles);
+		var articles = Article.mergeRelated(s);
+		Article.update(articles);
 		if(Common.doChart())
-			Chart.update(s.articles);
+			Chart.update(s.label, articles);
 		Cloud.updateByKeywords(s.keywords.keywords);
 		if(Common.online())
-			Map.update(s.articles);
+			Map.update(articles);
 			
 		Common.switchTab('article', $("#articleTab"));
 	}

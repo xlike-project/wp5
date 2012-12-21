@@ -1,0 +1,13 @@
+div.para {
+	color: black;
+}
+
+span.para { 
+	display: block; 
+	float: left; 
+	clear: left; 
+	width: 120px; 
+}
+li.para { 
+	list-style-type: none; 
+}

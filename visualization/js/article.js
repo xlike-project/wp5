@@ -15,11 +15,13 @@
 				list.append("li")
 					.append("a")
 					.attr("href", "javascript:void(0);")
-					.text(articleList[i].title)
-					.attr("onclick", "javascript:Article.open('" + articleList[i].url + "');");
-				//list.append("p")
-				//	.text("LOADING ...")
-				//	.style("display", "none");
+					.html(articleList[i].title + " (<i>From: " + articleList[i].source + "</i>)")
+					.attr("onclick", "javascript:Article.open('" + articleList[i].url + "');")
+					.style('color', function() { 
+						if(articleList[i].related) 
+							return 'gray';
+						else return '#003366';
+					});
 			}
 			
 			var num_entries = $("#articles-hide li").length;
@@ -56,6 +58,20 @@
 
 	Article.open = function(url) {
 		window.open(url, 'newwindow', 'height=768px, width=1024px, scrollbars=yes, resizable=yes');
+	};
+	
+	Article.mergeRelated = function(data) {
+		var articles = [].concat(data.articles);
+		if(data.related) {
+			for(var i in data.related) {
+				for(var j in data.related[i].articles) {
+					var a = data.related[i].articles[j];
+					a.related = true;
+					articles.push(a);
+				}
+			}
+		}
+		return articles;
 	};
 	
 	namespace.Article = Article;
