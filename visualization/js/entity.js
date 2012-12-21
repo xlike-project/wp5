@@ -13,20 +13,6 @@
 		var items_per_page = 20;
 		entities = entityList;
 		if(customeList) {
-		/*
-			if(customeList.general)
-				customes = customes.concat(customeList.general);
-			if(customeList.sport)
-				customes = customes.concat(customeList.sport);
-			if(customeList.economy)
-				customes = customes.concat(customeList.economy);
-			if(customeList.politics)
-				customes = customes.concat(customeList.politics);
-			if(customeList.foreignaffairs)
-				customes = customes.concat(customeList.foreignaffairs);
-			if(customeList.culture)
-				customes = customes.concat(customeList.culture);
-		*/
 			customes = customeList;
 		}
 		else customes = [];
@@ -56,6 +42,14 @@
 				
 				var num_entries = $("#custome-show li").length;
 				$("#custome-show li").css('display', 'none');
+					.append("a")
+					.attr("href", "javascript:void(0);")//function (d) { return d.url; })
+					.text(function (d) { return "> " + d.label + ' (' + d.count + ')'; })
+					.attr("onclick", function(d) { return "javascript:Entity.select('" + d.uri + "');";})
+					// .on("click", function(d) {
+						// selectEntity(d);
+					// });
+				var num_entries = $("#custome li").length;
 				// 创建分页
 				$("#cus-pager").pagination(num_entries, {
 					num_edge_entries: 1, //边缘页数
@@ -101,8 +95,7 @@
 			});
 			
 		}();
-	 
-		//entities = entities.concat(customes);
+
 		function cusPageSelectCallback(page_index, jq){
 			//var items_per_page = 3;
 			var num_entries = $("#custome-show li").length;
