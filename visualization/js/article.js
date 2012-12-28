@@ -1,77 +1,153 @@
 (function (namespace) {
 	var Article = {},
-		articles = [];
-		
+		articles = [],
+		dialog;
+	
+	Article.articleItemHtml = function (d) {
+		var html = "<a href='javascript:void(0);' ";
+		if(d.related)
+			html += "style='color:gray;' ";
+		html += "onclick=\"javascript:Article.open('" + d.id + "');\">"
+				+ d.title + " (<i>From: " + d.source + " " + d.date + "</i>)"
+				+ "</a>";
+		return html;
+	};
+	
 	Article.update = function (articleList) {
 		articles = articleList;
 		$("#articleTab").text("Article (" + articles.length + ")");
-		var items_per_page = 15;
 		var initPagination = function() {
-			//story list pageination
-			var list = d3.select("#articles-hide");
-			list.selectAll("li").remove();
-			//list.selectAll("p").remove();
-			for(var i = 0; i < articleList.length; i ++) {
-				list.append("li")
-					.append("a")
-					.attr("href", "javascript:void(0);")
-					.html(articleList[i].title + " (<i>From: " + articleList[i].source + "</i>)")
-					.attr("onclick", "javascript:Article.open('" + articleList[i].url + "');")
-					.style('color', function() { 
-						if(articleList[i].related) 
-							return 'gray';
-						else return '#003366';
-					});
-			}
-			
-			var num_entries = $("#articles-hide li").length;
-			// 创建分页
-			
-			$("#art-pager").pagination(num_entries, {
-				num_edge_entries: 1, //边缘页数
-				num_display_entries: 3, //主体页数
-				callback: articlePageSelectCallback,
-				items_per_page: items_per_page, //每页显示5项
-				prev_text:"<",
-				next_text:">"
-			});
-			
-			function articlePageSelectCallback(page_index, jq){
-				//var items_per_page = 3;
-				var num_entries = $("#articles-hide li").length;
-				var max_elem = Math.min((page_index+1) * items_per_page, num_entries);
-				
-				//$("#articles").animate({width : "toggle"}, "fast", function() {
-					$("#articles").html("");
-					// 获取加载元素
-					for(var i=page_index*items_per_page;i<max_elem;i++){
-						$("#articles").append($("#articles-hide li:eq("+i+")").clone());
-					}
-					//$("#articles").animate({width : "toggle"}, "fast");
-				//});
-				
-				//阻止单击事件
-				return false;
-			}
+			//article list pageination
+			/*
+			var pagerOpts = {
+						num_edge_entries: 2, //边缘页数
+						num_display_entries: 5, //主体页数
+						//callback: cusPageSelectCallback,
+						items_per_page: items_per_page, //每页显示5项
+						prev_text:"<",
+						next_text:">"
+					};
+			*/
+			Common.page({
+					container: "#articles",
+					pager: "#art-pager",
+					itemCreator: Article.articleItemHtml,
+					data: articles,
+					pagerOpts: Common.getPagerOpts({items_per_page: 15})
+				});
 		}();
 	};
 
-	Article.open = function(url) {
-		window.open(url, 'newwindow', 'height=768px, width=1024px, scrollbars=yes, resizable=yes');
+	Article.open = function(id) {
+		//window.open("article.html?id=" + id, 'article', 'height=768px, width=1024px, scrollbars=yes, resizable=yes');
+		settingsHide();
+		if(dialog && dialog.dialog('isOpen')) {
+			//dialog.dialog('option', 'title', "");
+			dialog.dialog('close');
+			$("#title").text("");
+			$("#from").text("");
+			$("#date").text("");
+			$("#url").text("");
+			$("#abstract").text("");
+			$("#load").show();
+		}
+		dialog = $("#article-dialog").dialog({"width":800, "height": 600, 'title': 'Article Details'});
+		Article.load(id);
 	};
 	
+	Article.load = function(id) {
+		//Common.showLoading();
+		$("#load").show();
+		$("#artpanel").hide();
+		$.getJSON(Common.getArticleQueryURL(id), function(data) {
+			try{
+				$("#title").text(data.title);
+				//dialog.dialog('option', 'title', 'Article Details');
+				$("#from").html("From: <i>" + data.source + "</i>");
+				$("#date").html("Time: <i>" + data.date + "</i>");
+				$("#url").html("<a href='" + data.url + "' _target=blank><i>" + data.url + "</i></a>");
+				$("#abstract").html(data.abstract.replace(new RegExp("\n", "g"), "<br/><br/>"));
+				//create entity, cutome-entity, story and related article list
+				var initPagination = function() {
+					//article list pageination
+					var articles = Article.mergeRelated(data);
+					/*var pagerOpts = {
+								num_edge_entries: 2, //边缘页数
+								num_display_entries: 5, //主体页数
+								//callback: cusPageSelectCallback,
+								items_per_page: items_per_page, //每页显示5项
+								prev_text:"<",
+								next_text:">"
+							};
+							*/
+					Common.page({
+							container: "#related-articles",
+							pager: "#ret-art-pager",
+							itemCreator: Article.articleItemHtml,
+							data: articles,
+							pagerOpts: Common.getPagerOpts({items_per_page: 10})
+						});
+					var stories = [];
+					for(var j = 0; j < data.related.length; j ++) {
+						if(data.related[i].stories)
+							stories = stories.concat(data.related[i].stories);
+					}
+					//hack stories list in Story context to make history works
+					var s = Story.getStories();
+					Array.prototype.splice.apply(s, [s.length, 0].concat(stories)); 
+					Common.page({
+							container: "#related-stories",
+							pager: "#ret-story-pager",
+							itemCreator: Story.storyItemHtml,
+							data: stories,
+							pagerOpts: Common.getPagerOpts({items_per_page: 10})
+						});
+					//pagerOpts.items_per_page = 10;
+					//hack entities list in Entity context to make history works
+					var e = Entity.getEntities();
+					Array.prototype.splice.apply(e, [e.length, 0].concat(data.entities)); 
+					Common.page({
+							container: "#related-entities",
+							pager: "#ret-ent-pager",
+							itemCreator: Entity.entityItemHtml,
+							data: data.entities,
+							pagerOpts: Common.getPagerOpts({items_per_page: 10})
+						});
+				}();
+				//Common.hideLoading();
+				$("#load").hide();
+				$("#artpanel").show();
+				} catch(e) {
+					//Common.hideLoading();
+					$("#load").hide();
+					alert("Oops, we got an error...");
+					console.log(e);
+					
+				}
+		})
+		.error(function(){ Common.hideLoading(); alert("Oops, we got an error...");});
+	};
 	Article.mergeRelated = function(data) {
-		var articles = [].concat(data.articles);
+		var as = [];
+		if(data.articles)
+			as = as.concat(data.articles);
+		
 		if(data.related) {
 			for(var i in data.related) {
 				for(var j in data.related[i].articles) {
 					var a = data.related[i].articles[j];
 					a.related = true;
-					articles.push(a);
+					as.push(a);
 				}
 			}
 		}
-		return articles;
+		return as;
+	};
+	
+	Article.closePopup = function () {
+		if(dialog && dialog.dialog('isOpen')) {
+			dialog.dialog('close');
+		}
 	};
 	
 	namespace.Article = Article;

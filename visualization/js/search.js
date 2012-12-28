@@ -60,6 +60,7 @@ function updatePage(data, isDefault, query) {
 		Common.hideLoading();
 	} catch(e) {
 		Common.hideLoading();
+		console.log(e);
 	}
 }
 

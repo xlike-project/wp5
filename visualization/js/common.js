@@ -17,15 +17,27 @@
 		entityQueryUrlSTA = "http://newsfeed.ijs.si/xlike-sta/entity?uri=",
 		storyQueryUrl = "http://newsfeed.ijs.si/xlike/story?id=",
 		storyQueryUrlSTA = "http://newsfeed.ijs.si/xlike-sta/story?id=",
+		articleQueryUrl = "http://newsfeed.ijs.si/xlike/article?id=",
+		articleQueryUrlSTA = "http://newsfeed.ijs.si/xlike-sta/article?id=",
 		
 		history = [],
 		MAX_HIS = 8,
+		items_per_page = 10,
 		Common = {};
+	Common.pagerOpts = {
+						num_edge_entries: 2, //边缘页数
+						num_display_entries: 5, //主体页数
+						//callback: cusPageSelectCallback,
+						items_per_page: items_per_page, //每页显示5项
+						prev_text:"<",
+						next_text:">"
+					};
 	Common.online = function() { return online; };
 	Common.doChart = function() { return doChart; };
 	Common.debug = function() { return debug; };
 	Common.sta = function() { return sta; };
 	Common.hotTab = function() { return hotTab; };
+	Common.getPagerOpts = function(opts) { return $.extend(Common.pagerOpts, opts || {}); };
 	/**
 	 * Find single article object from a article list by article id. Return null
 	 * if not found.
@@ -126,6 +138,21 @@
 		return url;
 	};
 	
+	Common.getArticleQueryURL = function(id, opt) {
+		var url = "";
+		if(Common.sta())
+			url = articleQueryUrlSTA;
+		else url = articleQueryUrl;
+		url += encodeURIComponent(id);
+		//if(opt) {
+		//	url += "&" + getParaStr(opt);
+		//}
+		url += "&callback=?";
+		if(Common.debug())
+			console.log(url);
+		return url;
+	};
+	
 	Common.showLoading = function() {
 		$("#loading").css({
 			"position": "absolute",
@@ -219,10 +246,10 @@
 			Entity.select(id, true);
 		else if(type == "story") {
 			Story.update(record.stories);
-			for(var k in record.stories) {
-				if(record.stories[k].id == id)
-					Story.open(k, true);
-			}
+			//for(var k in record.stories) {
+			//	if(record.stories[k].id == id)
+					Story.open(id, true);
+			//}
 		} else if(type == "search") {
 			doSearch(record.label);
 		} else {
@@ -256,6 +283,60 @@
 		}
 			
 	}
+	Common.getRequestParameters = function() {
+		var url = location.href; 
+		var paraString = url.substring(url.indexOf("?")+1,url.length).split("&"); 
+		var paraObj = {}; 
+		for (i=0; j=paraString[i]; i++){ 
+			paraObj[j.substring(0,j.indexOf("=")).toLowerCase()] = j.substring(j.indexOf("=")+1,j.length); 
+		}
+		return paraObj;
+	};
+	
+	Common.page = function(opts) {
+		opts = jQuery.extend({
+			container: "#list",
+			pager: "#pager",
+			itemElement: "li",
+			itemCreator:createItem,
+			data: [],
+			//pageSelectCallback: callback,
+			pagerOpts: {}
+		}, opts||{});
+		opts.pagerOpts.callback = callback;
+		
+		var itemList = opts.container + " " + opts.itemElement;
+		
+		function callback(page_index, jq) {
+			//var items_per_page = 3;
+			var num_entries = $(itemList).css('display', 'none').length;
+			var max_elem = Math.min((page_index+1) * opts.pagerOpts.items_per_page, num_entries);
+			// 获取加载元素
+			for(var i=page_index*opts.pagerOpts.items_per_page;i<max_elem;i++){
+				$(itemList + ":eq("+i+")").css('display', 'block');
+			}
+			//阻止单击事件
+			return false;
+		}
+		
+		function createItem(d) {
+			return "";
+		}
+		
+		$(opts.container).html("");
+		if(opts.data.length == 0) {
+			$(opts.container).html("<p style='color:gray;text-align:center'>No Data</p>");
+			return;
+		}
+		d3.select(opts.container)
+					.selectAll(opts.itemElement)
+					.data(opts.data)
+					.enter()
+					.append(opts.itemElement)
+					.html(opts.itemCreator);
+		var num_entries = $(itemList).css('display', 'none').length;
+		$(opts.pager).pagination(num_entries, opts.pagerOpts);
+	};
 	
 	namespace.Common = Common;
 	

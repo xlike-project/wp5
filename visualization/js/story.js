@@ -4,9 +4,9 @@
 (function (namespace) {
 	var Story = {};
 	var stories = [];
-	var currentStoryIndex = -1;
+	var currentStoryId = -1;
 	
-	function updateStoryContent(data, index) {
+	function updateStoryContent(data, id) {
 		var s = data;
 		if(typeof s != "object")
 			s = eval(s);
@@ -22,9 +22,6 @@
 				break;
 		}
 		html += "</ul>";
-		var p = $("#stories > p:eq(" + index + ")");
-		p.css("display","block");
-		p.slideUp(300).html(html).slideDown(300);
 		//update entity list, chart, cloud and map.
 		Entity.update(s.entities, s.customEntities);
 		var articles = Article.mergeRelated(s);
@@ -37,110 +34,94 @@
 			
 		Common.switchTab('article', $("#articleTab"));
 	}
+	
+	function getStoryById(id) {
+		for(var i in stories) {
+			if(stories[i].id == id)
+				return stories[i];
+		}
+	}
+	
 	/**
 	 * Inner Function: Get single story content by its id, and update.
 	 */
-	function getStory(index, history) {
-		var id = stories[index].id;
+	function getStory(id, history) {
+		//var id = stories[index].id;
+		var story = getStoryById(id);
 		if(Common.online()) {
-			$.getJSON(Common.getStoryQueryURL(id), function(data){
-				updateStoryContent(data, index);
+			$.getJSON(Common.getStoryQueryURL(id, getSearchOptions()), function(data){
+				updateStoryContent(data, id);
 				Common.hideLoading();
 				if(!history)
-					Common.addHistory(stories[index], "story");
+					Common.addHistory(data, "story");
 			})
 			.error(function(){
 				Common.hideLoading();
-				$("#stories > p:eq(" + index + ")").html("Oops, we got an error...");
+				alert("Oops, we got an error.");
 			});
 		} else {
 			//using local data at the moment
-			updateStoryContent(storyQuery, index);
+			updateStoryContent(storyQuery, id);
 			if(!history)
-				Common.addHistory(stories[index], "story");
+				Common.addHistory(story, "story");
 		}
 	}
 	
 	/**
 	 * Exported Function: Unfolding a story block to display its abstract and article list.
 	 */
-	Story.open = function(index, history){
+	Story.open = function(id, history){
 		settingsHide();
-		if(index == currentStoryIndex)
+		Article.closePopup();
+		if(id == currentStoryId)
 			return;
-		var cp = $("#stories > p:eq(" + currentStoryIndex + ")");
-		if(cp.length != 0)
-			cp.slideUp(300);
-		
+			
 		Common.showLoading();
 		try{
-			getStory(index, history);
-			currentStoryIndex = index;
+			getStory(id, history);
+			currentStoryId = id;
 		} catch (e) {
 			Common.hideLoading();
 		}
 	};
-
+	
+	Story.storyItemHtml = function (d, index) {
+		var html = "<a href='javascript:void(0);' "
+				+ "onclick='javascript:Story.open(\"" + d.id + "\");'>"
+				+ d.label
+				+ "</a>";
+		return html;
+	};
+	
 	/**
 	 * Exported Function: Update story list.
 	 */
 	Story.update = function(storyList) {
-		var items_per_page = 15;
 		stories = storyList;
 		$("#storyTab").text("Story (" + stories.length + ")");
 		
-		currentStoryIndex = -1;
+		currentStoryId = -1;
 		//$("#stories").slideUp(300);
 		var initPagination = function() {
 			//story list pageination
-			var list = d3.select("#stories-hide");
-			list.selectAll("li").remove();
-			list.selectAll("p").remove();
-			for(var i = 0; i < storyList.length; i ++) {
-				list.append("li")
-					.append("a")
-					.attr("href", "javascript:void(0);")
-					.text(storyList[i].label)
-					.attr("onclick", "javascript:Story.open(" + i + ");");
-				list.append("p")
-					.text("LOADING ...")
-					.style("display", "none");
-			}
-			
-			var num_entries = $("#stories-hide li").length;
-			// 创建分页
-			
-			$("#story-pager").pagination(num_entries, {
-				num_edge_entries: 1, //边缘页数
-				num_display_entries: 3, //主体页数
-				callback: storyPageSelectCallback,
-				items_per_page: items_per_page, //每页显示5项
-				prev_text:"<",
-				next_text:">"
-			});
-			
+			/*
+			var pagerOpts = {
+						num_edge_entries: 2, //边缘页数
+						num_display_entries: 5, //主体页数
+						//callback: cusPageSelectCallback,
+						items_per_page: items_per_page, //每页显示5项
+						prev_text:"<",
+						next_text:">"
+					};
+			*/
+			Common.page({
+					container: "#stories",
+					pager: "#story-pager",
+					itemCreator: Story.storyItemHtml,
+					data: stories,
+					pagerOpts: Common.getPagerOpts({items_per_page: 15})
+				});
 		}();
-		
-		function storyPageSelectCallback(page_index, jq){
-			//var items_per_page = 3;
-			var num_entries = $("#stories-hide li").length;
-			var max_elem = Math.min((page_index+1) * items_per_page, num_entries);
-			
-			//$("#stories").animate({width : "toggle"}, "fast", function() {
-				$("#stories").html("");
-				// 获取加载元素
-				for(var i=page_index*items_per_page;i<max_elem;i++){
-					$("#stories").append($("#stories-hide li:eq("+i+")").clone());
-				}
-				//$("#stories").animate({width : "toggle"}, "fast");
-			//});
-			
-			//阻止单击事件
-			return false;
-		}
-		
-		//$("#stories").slideDown(300);
-		//Story.open(0);
 	};
 	
 	Story.getStories = function() {

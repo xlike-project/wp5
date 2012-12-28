@@ -153,10 +153,12 @@ jQuery.fn.pagination = function(maxentries, opts){
 			}
 		}
 		// 所有初始化完成，绘制链接
-		drawLinks();
+		if(maxentries > opts.items_per_page) //if maxentries <= items_per_page, does not draw links
+			drawLinks();
+		else {
+			panel.empty();
+		}
         // 回调函数
         opts.callback(current_page, this);
 	});
 }
-
-
