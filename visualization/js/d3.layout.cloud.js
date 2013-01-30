@@ -10,7 +10,7 @@
         padding = cloudPadding,
         spiral = archimedeanSpiral,
         words = [],
-		uri = null,
+    uri = null,
         timeInterval = Infinity,
         event = d3.dispatch("word", "end"),
         timer = null,
@@ -25,7 +25,7 @@
           data = words.map(function(d, i) {
         return {
           text: text.call(this, d, i),
-//		  uri: uri.call(this, d, i),//added by alex
+//      uri: uri.call(this, d, i),//added by alex
           font: font.call(this, d, i),
           rotate: rotate.call(this, d, i),
           size: ~~fontSize.call(this, d, i),
@@ -133,9 +133,9 @@
       words = x;
       return cloud;
     };
-	
-	//added by alex
-	cloud.uri = function(x) {
+  
+  //added by alex
+  cloud.uri = function(x) {
       if (!arguments.length) return uri;
       uri = x;
       return cloud;

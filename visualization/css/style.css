@@ -179,19 +179,6 @@ h3, h4
 	font-family: Verdana, Arial, sans-serif;
 }
 
-#righty p 
-{
-	border: 1px solid #efefef;
-	background-color: #f9f9f9;
-	text-align: left;	
-	padding: 0px;
-	margin-left: 0px;
-	display: block;
-	font-family: Verdana, Arial, sans-serif;
-	color: #607080;
-	-webkit-margin-before: 4px;
-}
-
 #righty .but 
 {
 	width: 50px;
