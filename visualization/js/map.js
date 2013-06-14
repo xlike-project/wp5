@@ -43,14 +43,12 @@
     var locMap = [];
     for(i in articleList) {
       var article = articleList[i];
-      if(article == null)
+      if(article == null || !article.country)
         continue;
-      var j = 0;
-      var loc = "";
-      loc = article.country;
+      var loc = article.country;
       if(article.city != null && article.city != "")
         loc = article.city + "," + loc;
-      for(; j < locMap.length; j ++) {
+      for(var j=0; j < locMap.length; j ++) {
         if(locMap[j].loc.toLowerCase() == loc.toLowerCase()) {
           locMap[j].articles.push(article);
           break;

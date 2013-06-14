@@ -5,20 +5,22 @@
 
 (function (namespace) {
   
+  // var baseUrl = "http://newsfeed.ijs.si";
+  var baseUrl = "http://babaji.ijs.si:8082";
   var online = true,      // false means using local data in a file for 
                 // development, true for using news feeds online
     doChart = true,
     debug = true,
     sta = false,
     hotTab = true,      // hot emtity tab is shown
-    searchUrl = "http://newsfeed.ijs.si/xlike/search?q=",
-    searchUrlSTA = "http://newsfeed.ijs.si/xlike-sta/search?q=",
-    entityQueryUrl = "http://newsfeed.ijs.si/xlike/entity?uri=",
-    entityQueryUrlSTA = "http://newsfeed.ijs.si/xlike-sta/entity?uri=",
-    storyQueryUrl = "http://newsfeed.ijs.si/xlike/story?id=",
-    storyQueryUrlSTA = "http://newsfeed.ijs.si/xlike-sta/story?id=",
-    articleQueryUrl = "http://newsfeed.ijs.si/xlike/article?id=",
-    articleQueryUrlSTA = "http://newsfeed.ijs.si/xlike-sta/article?id=",
+    searchUrl = baseUrl + "/xlike/search?q=",
+    searchUrlSTA =  baseUrl + "/xlike-sta/search?q=",
+    entityQueryUrl =  baseUrl + "/xlike/entity?uri=",
+    entityQueryUrlSTA =  baseUrl + "/xlike-sta/entity?uri=",
+    storyQueryUrl =  baseUrl + "/xlike/story?id=",
+    storyQueryUrlSTA =  baseUrl + "/xlike-sta/story?id=",
+    articleQueryUrl =  baseUrl + "/xlike/article?id=",
+    articleQueryUrlSTA =  baseUrl + "/xlike-sta/article?id=",
     
     history = [],
     MAX_HIS = 8,
