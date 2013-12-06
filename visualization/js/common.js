@@ -20,6 +20,8 @@
     storyQueryUrlSTA =  baseUrl + "/xlike-sta/story?id=",
     articleQueryUrl =  baseUrl + "/xlike/article?id=",
     articleQueryUrlSTA =  baseUrl + "/xlike-sta/article?id=",
+	
+	suggestConcepts = baseUrl + "/suggestConcepts?callback=?&prefix=",
     
     history = [],
     MAX_HIS = 8,
@@ -94,12 +96,63 @@
   };
   
   Common.getSearchURL = function(queryStr, opt) {
-  
+	var searchwordArray = new Array();
+	var entitywordArray = new Array();
+	queryStr = queryStr.trim()
+	if(queryStr.indexOf("[") != -1 && queryStr.indexOf("]") != -1){
+		if(queryStr != ""){
+			var entity = queryStr.substring(queryStr.indexOf("["),queryStr.indexOf("]"))  + "]" ;
+			entitywordArray.push(entity);
+			var prestr = queryStr.substring(0,queryStr.indexOf("[")).trim();
+			var afterstr = queryStr.substring(queryStr.indexOf("]") + 1,queryStr.length).trim();
+			
+			if(prestr != ""){
+				searchwordArray = prestr.split(" ");
+			}
+			
+			if(afterstr != ""){
+				if(searchwordArray.length != 0){
+					searchwordArray = searchwordArray.concat(afterstr.split(" "));
+				}else {
+					searchwordArray = afterstr.split(" ");
+				}
+			}
+		}
+	}else {
+		if(queryStr != ""){
+			searchwordArray = queryStr.split(" ");
+		}
+	}
+	
+	var qstr = "";
+	if(searchwordArray.length != 0){
+		for(var i in searchwordArray){
+			if(i == 0){
+				qstr += encodeURIComponent(searchwordArray[i]);
+			}else {
+				qstr += "&q=" + encodeURIComponent(searchwordArray[i]);
+			}
+		}
+	}else {
+		qstr = queryStr;
+	}
+	
+	var cstr = "";
+	for(var i in entitywordArray){
+		if(entityUrlMap[entitywordArray[i]] == 'undefined'){
+			cstr += "&concept=";
+		}else {
+			cstr += "&concept=" + encodeURIComponent(entityUrlMap[entitywordArray[i]]);
+		}	
+	}
+	
     var url = "";
     if(Common.sta())
       url = searchUrlSTA;
     else url = searchUrl;
-    url += encodeURIComponent(queryStr) + "&page=0";
+	var tempurl = entityUrlMap[queryStr];
+    //url += encodeURIComponent(queryStr) + "&page=0";
+	url += qstr + cstr + "&page=0";
     if(opt) {
       url += "&" + getParaStr(opt);
     }
@@ -107,6 +160,19 @@
     if(Common.debug())
       console.log(url);
     return url;
+  };
+  
+  Common.getSuggestConceptsURL = function(prefix){
+	var url = "";
+	if(prefix == ""){
+		url = suggestConcepts + "%"; 
+	}else {
+		url = suggestConcepts + encodeURIComponent(prefix);
+	}
+	if(Common.debug()){
+		console.log(url);
+	}
+	return url;
   };
   
   Common.getEntityQueryURL = function(id, opt) {

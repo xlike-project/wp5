@@ -3,12 +3,24 @@
     articles = [],
     dialog;
   
+  var armaxlen = 65;
+  
+  //var flag = 0;
+  var articleidArray = new Array();
+  
   Article.articleItemHtml = function (d) {
+	articleidArray.push(d.id);
+	
+	var title = d.title;
+	if(title.length > armaxlen){
+		title = title.substring(0,armaxlen) + "...";
+	}
+	
     var html = "<a href='javascript:void(0);' ";
     if(d.related)
       html += "style='color:gray;' ";
-    html += "onclick=\"javascript:Article.open('" + d.id + "');\">"
-        + d.title + " (<i>" + d.source + " " + d.date + "</i>)"
+    html += "onclick=\"javascript:Article.open('" + d.id + "');\"> >"
+        + title + " </br><i class='i'>(" + d.source + " " + d.date + ")</i>"
         + "</a>";
     return html;
   };
@@ -41,7 +53,8 @@
   Article.open = function(id) {
     //window.open("article.html?id=" + id, 'article', 'height=768px, width=1024px, scrollbars=yes, resizable=yes');
     settingsHide();
-    if(dialog && dialog.dialog('isOpen')) {
+	
+	if(dialog && dialog.dialog('isOpen')) {
       //dialog.dialog('option', 'title', "");
       dialog.dialog('close');
       $("#title").text("");
@@ -61,7 +74,31 @@
     $("#artpanel").hide();
     $.getJSON(Common.getArticleQueryURL(id), function(data) {
       try{
-        $("#title").text(data.title);
+        //$("#title").text(data.title);
+		var previousid = 0;
+		var nextid = 0;
+		
+		for(var i in articleidArray){
+			if(articleidArray[i] == id){
+				previousid = (i) - 1;
+				nextid = parseInt(i) + 1;
+				break;
+			}
+		}
+		
+		var navigation = "<span id='navart'>";
+		
+		if(previousid <= -1 && nextid < articleidArray.length + 1){
+			navigation += "<a href='#' class='navarticle' onclick=\"javascript:Article.open('" + articleidArray[nextid] + "');\" style='color: #A52A2A;'>next</a>";
+		}else if(previousid > -1 && nextid < articleidArray.length + 1){
+			navigation += "<a href='#' class='navarticle' onclick=\"javascript:Article.open('" + articleidArray[previousid] + "');\" style='color: #A52A2A;'>previous</a>";
+			navigation += "<a href='#' class='navarticle' onclick=\"javascript:Article.open('" + articleidArray[nextid] + "');\" style='color: #A52A2A;'>next</a>";
+		}else if(previousid > -1 && nextid >= articleidArray.length + 1){
+			navigation += "<a href='#' class='navarticle' onclick=\"javascript:Article.open('" + articleidArray[previousid] + "');\" style='color: #A52A2A;'>previous</a>";
+		}
+		navigation += "</span>";
+		
+		$("#title").html(data.title + navigation);
         //dialog.dialog('option', 'title', 'Article Details');
         $("#from").html("<i>" + data.source + "</i>");
         $("#date").html("<i>" + data.date + "</i>");
