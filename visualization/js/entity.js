@@ -1,10 +1,16 @@
+var minandmaxDate = null;
+var linemap = {};
+var allDateArray = new Array();
+var globalurl = "";
+var diffday;
+
 (function (namespace) {
   var Entity = {},
     entities = [],
     customes = [],
     timelines = [],
     MAX_LABEL_LENGTH = 20;
-  
+	
   Entity.getEntities = function() {
     return entities;
   };
@@ -61,17 +67,30 @@
   };
 
   Entity.select = function(uri, history) {
+	//alert("uri :"+uri);
     settingsHide();
     Article.closePopup();
     Common.showLoading();
     var storyList = [];
     if(Common.online()) {
-      $.getJSON(Common.getEntityQueryURL(uri, getSearchOptions()), function(data) {
+		//alert(Common.getEntityQueryURL(uri, getSearchOptions()));
+	  var url = Common.getEntityQueryURL(uri, getSearchOptions());
+	  
+	  //if(minandmaxDate == null || (allDateArray.length == 0)){
+	  diffday = getdiffDay(url);
+	  minandmaxDate = getMinAndMaxDate(diffday);
+	  allDateArray = getallDateArray(minandmaxDate);
+	  linemap = {};
+	  //}
+	  
+      $.getJSON(url, function(data) {
         try{
           var articles = Article.mergeRelated(data);
-          Chart.update(data.label, articles);
-          //Cloud.updateByArticles(data.articles);
+		  var sources = data.sources;		  
+		  var dates = data.dates;
+		  Chart.update(data.label,articles, sources, dates,url);
           Cloud.updateByKeywords(data.keywords.keywords);
+		  
           Map.update(articles);
           Story.update(data.stories);
           Article.update(articles);
@@ -80,9 +99,17 @@
           clearTimeline();
           addTimelineMark(elem);
           timelines.push(data);
+		   
           Common.hideLoading();
-          if(!history)
+		
+          if(!history){
+			//alert(getEntityByURI(uri));
+			if(typeof getEntityByURI(uri) == "undefined"){
+				entities = entities.concat(data.entities);
+			}
             Common.addHistory(getEntityByURI(uri), "entity");
+		  }
+		  
         } catch(e) {
           Common.hideLoading();
           alert("Oops, we got an error...");
@@ -149,6 +176,41 @@
     }
   }
   
+  Entity.timeline_old = function(e, data) {
+    var uri = null;
+    if(typeof data == 'string')
+      uri = data;
+    else uri = data.uri;
+    var found = false;
+    var i = 0;
+    for(i in timelines) {
+      if(timelines[i].uri == uri) {
+        found = true;
+        break;
+      }
+    }
+	
+    if(found) {
+      Chart.removeTimeline(timelines[i].label);
+      timelines.splice(i, 1);
+      removeTimelineMark(e);
+    } else if(typeof data == 'string') {
+      Common.showLoading();
+	  //alert(Common.getEntityQueryURL(uri, getSearchOptions()));
+	  //document.write(Common.getEntityQueryURL(uri, getSearchOptions()));
+	  var url = Common.getEntityQueryURL(uri, getSearchOptions());
+	  minandmaxDate = getMinAndMaxDate(url);
+	  
+      $.getJSON(url, addTimeline).error(
+		function(){ 
+			Common.hideLoading(); 
+			alert("Oops, we got an error...");
+	  });
+    } else {
+      addTimeline(data);
+    }
+  };
+  
   Entity.timeline = function(e, data) {
     var uri = null;
     if(typeof data == 'string')
@@ -162,14 +224,38 @@
         break;
       }
     }
+	globalurl = "";
+	var url = Common.getEntityQueryURL(uri, getSearchOptions());
+	globalurl = url;
+	//alert(url);
     if(found) {
       Chart.removeTimeline(timelines[i].label);
+	  Chart.removereTimeline(timelines[i].label);
       timelines.splice(i, 1);
       removeTimelineMark(e);
     } else if(typeof data == 'string') {
       Common.showLoading();
-      $.getJSON(Common.getEntityQueryURL(uri, getSearchOptions()), addTimeline)
-        .error(function(){ Common.hideLoading(); alert("Oops, we got an error...");});
+	  if(typeof diffday == "undefined"){
+		diffday = getdiffDay(url);
+	  }else {
+		if(diffday != getdiffDay(url)){
+			diffday = getdiffDay(url);
+			for(var i in timelines){
+				var e = getElementByURI(timelines[i].uri);
+				removeTimelineMark(e)
+			}
+			linemap = {};
+		}
+	  }
+		
+      minandmaxDate = getMinAndMaxDate(diffday);
+	  allDateArray = getallDateArray(minandmaxDate);
+	  
+      $.getJSON(url, addTimeline).error(
+		function(){ 
+			Common.hideLoading(); 
+			alert("Oops, we got an error...");
+	  });
     } else {
       addTimeline(data);
     }
@@ -177,8 +263,31 @@
   
   function addTimeline(data) {
     try {
+	  var label = data.label;
+	  var dates = data.dates;
+      //Chart.addTimeline(data);
+	  Chart.addTimeline(label,dates,globalurl);
+	  Chart.readdTimeline(label,dates,globalurl);
+      timelines.push(data);
+	  
+      var e = getElementByURI(data.uri);
+      addTimelineMark(e);
+      Common.hideLoading();
+    } catch(e) {
+      Common.hideLoading();
+      alert("Oops, we got an error...");
+      console.log(e);
+    }
+  }
+  
+   function addTimeline_old(data) {
+    try {
+		//document.write(JSON.stringify(data));
       Chart.addTimeline(data);
       timelines.push(data);
+	  //document.write(timelines);
+	  //document.write(JSON.stringify(timelines));
+	  
       var e = getElementByURI(data.uri);
       addTimelineMark(e);
       Common.hideLoading();

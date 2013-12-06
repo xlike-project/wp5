@@ -5,6 +5,7 @@
   var Story = {};
   var stories = [];
   var currentStoryId = -1;
+  var strlen = 50;
   
   function updateStoryContent(data, id) {
     var s = data;
@@ -35,6 +36,39 @@
     Common.switchTab('article', $("#articleTab"));
   }
   
+  function updateStoryContent(data, id, url) {
+    var s = data;
+    if(typeof s != "object")
+      s = eval(s);
+    var html = "<ul id='news'>";
+    var count = 0;
+    for(var i in s.articles) {
+      if(s.articles[i] == null)
+        continue;
+      var obj = s.articles[i];
+      html += "<li>&gt; <a style='font-weight: normal;' href='" + obj.url + "'>" + obj.title + "</a></li>";
+      count ++;
+      if(count ==10)
+        break;
+    }
+    html += "</ul>";
+    //update entity list, chart, cloud and map.
+    Entity.update(s.entities, s.customEntities);
+    var articles = Article.mergeRelated(s);
+    Article.update(articles);
+    if(Common.doChart()){
+      //Chart.update(s.label, articles);
+	  var sourceList = data.sources;
+	  var datesList = data.dates;
+	  Chart.update(s.label,articles,sourceList,datesList,url);
+	}
+    Cloud.updateByKeywords(s.keywords.keywords);
+    if(Common.online())
+      Map.update(articles);
+      
+    Common.switchTab('article', $("#articleTab"));
+  }
+  
   function getStoryById(id) {
     for(var i in stories) {
       if(stories[i].id == id)
@@ -49,8 +83,11 @@
     //var id = stories[index].id;
     var story = getStoryById(id);
     if(Common.online()) {
-      $.getJSON(Common.getStoryQueryURL(id, getSearchOptions()), function(data){
-        updateStoryContent(data, id);
+	  var url = Common.getStoryQueryURL(id, getSearchOptions());
+      $.getJSON(url, function(data){
+		//alert("url -- story :" + url);
+        //updateStoryContent(data, id);
+		updateStoryContent(data, id,url);
         Common.hideLoading();
         if(!history)
           Common.addHistory(data, "story");
@@ -86,9 +123,15 @@
   };
   
   Story.storyItemHtml = function (d, index) {
+	var label = d.label;
+	
+	if(label.length > 70){
+		label = label.substring(0,70) + "...";
+	}
+	
     var html = "<a href='javascript:void(0);' "
-        + "onclick='javascript:Story.open(\"" + d.id + "\");'>"
-        + d.label
+        + "onclick='javascript:Story.open(\"" + d.id + "\");'> >"
+        + label
         + "</a>";
     return html;
   };
@@ -119,7 +162,7 @@
           pager: "#story-pager",
           itemCreator: Story.storyItemHtml,
           data: stories,
-          pagerOpts: Common.getPagerOpts({items_per_page: 15})
+          pagerOpts: Common.getPagerOpts({items_per_page: 24})
         });
     }();
   };
